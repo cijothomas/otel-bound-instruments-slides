@@ -1,0 +1,61 @@
+name: Deploy Slides to GitHub Pages
+
+# The build always runs, so a broken deck fails fast on push.
+# The Pages publish is gated on the PUBLISH_PAGES repo variable, because this
+# repo is private until after the talk. To go live:
+#   gh repo edit --visibility public --accept-visibility-change-consequences
+#   gh api -X POST repos/{owner}/{repo}/pages -f build_type=workflow
+#   gh variable set PUBLISH_PAGES --body true
+# Until then pushes stay green and nothing is published.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Slidev
+        run: npx slidev build slides.md --base /otel-bound-instruments-slides/ --out dist
+
+      - name: Setup Pages
+        if: vars.PUBLISH_PAGES == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: vars.PUBLISH_PAGES == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    if: vars.PUBLISH_PAGES == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

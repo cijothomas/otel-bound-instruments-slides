@@ -1,0 +1,21 @@
+{
+  "name": "otel-bound-instruments-slides",
+  "version": "1.0.0",
+  "description": "OpenTelemetry Metrics Just Got 25x Faster - lightning talk (bound instruments)",
+  "scripts": {
+    "dev": "slidev",
+    "build": "slidev build --base /otel-bound-instruments-slides/",
+    "export": "slidev export"
+  },
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@slidev/cli": "^52.14.1",
+    "@slidev/theme-default": "^0.25.0",
+    "@slidev/theme-seriph": "^0.25.0"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.58.2",
+    "qrcode": "^1.5.4"
+  }
+}

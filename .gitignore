@@ -1,0 +1,13 @@
+node_modules/
+dist/
+slide-png/
+slide-clicks/
+.DS_Store
+
+# Presenter material — kept locally, not published
+slides-with-notes.md
+SCRIPT.md
+TALK-PLAN.md
+assets/
+bound-instruments-5min.pdf
+KCD_SF_Bay_Area_2026_Slide_Template.pptx
