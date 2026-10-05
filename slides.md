@@ -2,10 +2,11 @@
 theme: seriph
 title: "OpenTelemetry Metrics Just Got 25× Faster"
 info: |
-  KCD SF Bay Area 2026 — Lightning Talk (5 min)
+  Observability Summit Europe 2026 — Lightning Talk (10 min)
+  October 5, 2026 · Prague · 12:00–12:10
   by Cijo Thomas, Microsoft
 layout: cover
-class: text-center kcd-brand
+class: text-center summit-brand summit-cover
 fonts:
   provider: none
 drawings:
@@ -14,7 +15,7 @@ transition: slide-left
 mdc: true
 ---
 
-<img src="/kcd-sfbay-logo.png" class="mx-auto" style="width: 300px; margin-bottom: 2.5rem;" />
+<div class="text-lg opacity-75 mb-6">October 5, 2026 · Prague</div>
 
 # OpenTelemetry Metrics<br/>Just Got **25× Faster**
 
@@ -75,6 +76,77 @@ class: text-center
 
 ---
 
+# What does a Metrics SDK do?
+
+<div class="text-xl opacity-65 mt-1">Raw measurements in. Aggregated metric points out.</div>
+
+<div class="metric-flow mt-7">
+<div class="metric-card">
+<div class="metric-label">Incoming measurements</div>
+<div class="text-lg mb-3"><code>fruits_sold</code> · name + color</div>
+<div class="metric-measure">+1 &nbsp; apple, red</div>
+<div class="metric-measure">+2 &nbsp; banana, yellow</div>
+<div class="metric-measure">+3 &nbsp; apple, red</div>
+<div class="metric-measure">+1 &nbsp; banana, yellow</div>
+<div class="text-lg opacity-50 mt-3">… more sales keep arriving</div>
+</div>
+<div v-click="1" class="metric-arrow">→</div>
+<div v-click="1" class="metric-card metric-card-output">
+<div class="metric-label">SDK aggregates → export</div>
+<div class="text-lg mb-3"><code>fruits_sold</code></div>
+<div class="metric-point"><span>apple, red</span><strong>4</strong></div>
+<div class="metric-point"><span>banana, yellow</span><strong>3</strong></div>
+<div class="text-lg opacity-60 mt-4">One point per attribute combination</div>
+</div>
+</div>
+
+<!--
+The Metrics SDK takes individual measurements and aggregates them before export. Say we're counting fruits sold, with name and color as attributes. One red apple, two yellow bananas, three more red apples, one more banana: the SDK keeps two points, with totals four and three. That's the beauty of metrics: with fixed cardinality, aggregation storage doesn't grow with the number of sales. There is still work on every measurement. What is that work?
+-->
+
+---
+
+# Which point gets the next sale?
+
+<div class="text-xl opacity-65 mt-1">Same attributes, even when they arrive in a different order.</div>
+
+<div class="metric-input mt-6"><code>fruits_sold.add(1, [name="apple", color="red"])</code></div>
+
+<div class="metric-pipeline mt-6">
+<div v-click class="metric-stage">
+<div class="metric-step">1</div>
+<div class="text-2xl font-bold">Sort attributes</div>
+<div class="text-lg opacity-65 mt-2">Put keys in a consistent order</div>
+<div class="text-sm mt-3"><code>color=red, name=apple</code><br/><span class="opacity-50">one consistent key order</span></div>
+</div>
+<div class="metric-arrow">→</div>
+<div v-click class="metric-stage">
+<div class="metric-step">2</div>
+<div class="text-2xl font-bold">Find the point</div>
+<div class="text-lg opacity-65 mt-2">Hash attributes<br/>Look up the aggregate</div>
+<div class="text-lg mt-3"><strong>apple, red → 4</strong></div>
+</div>
+<div class="metric-arrow">→</div>
+<div v-click class="metric-stage metric-card-output">
+<div class="metric-step">3</div>
+<div class="text-2xl font-bold">Update</div>
+<div class="text-lg opacity-65 mt-2">Add the measurement</div>
+<div class="text-4xl font-bold mt-4">4 → 5</div>
+</div>
+</div>
+
+<v-click>
+
+<div class="text-2xl mt-7 text-center">Most of the hot-path work is <strong>finding the point</strong>.</div>
+
+</v-click>
+
+<!--
+Now another red apple arrives, with the attributes supplied in a different order. Attribute order must not create a different point. In the Rust SDK path we're discussing, we first sort the attributes into a consistent key order. Then hash those attributes and look up the matching aggregate. Finally, add one to its total. If the combination is new, the SDK needs to create a point, subject to cardinality limits. This diagram shows an existing point. Most of the cost in our benchmark is getting to that point, not incrementing it. Let's look at the numbers.
+-->
+
+---
+
 # Where is the 50 ns spent?
 
 <div class="text-xl opacity-65 mt-1">
@@ -117,7 +189,23 @@ on <strong>every call</strong>
 
 <div v-click>
 
-<div class="text-xl opacity-60 mb-2">bound</div>
+<div class="text-xl opacity-60 mb-2">instead of this</div>
+
+```rust
+// hot path
+counter.add(1, &[
+    KeyValue::new("protocol", "tcp"),
+]);
+```
+
+<div class="text-lg opacity-60 mt-3">attributes processed <strong>every call</strong></div>
+
+</div>
+
+
+<div v-click>
+
+<div class="text-xl opacity-60 mb-2">do this instead</div>
 
 ```rust
 // once, at startup
@@ -132,28 +220,13 @@ tcp.add(1);
 <div class="text-lg mt-3">no attributes at the call site</div>
 
 </div>
-
-<div v-click>
-
-<div class="text-xl opacity-60 mb-2">unbound &mdash; what you write today</div>
-
-```rust
-// hot path
-counter.add(1, &[
-    KeyValue::new("protocol", "tcp"),
-]);
-```
-
-<div class="text-lg opacity-60 mt-3">attributes processed <strong>every call</strong></div>
-
-</div>
-
 </div>
 
 <v-click>
 
 <div class="text-3xl mt-8 text-center">
-the expensive attribute processing <span class="opacity-40">&rarr;</span> <strong>once, at startup</strong>
+<strong>No attributes on the hot path.</strong>
+<div class="text-xl opacity-65 mt-3">Bind once. Update through the stored handle.</div>
 </div>
 
 </v-click>
@@ -170,7 +243,7 @@ Rust SDK &middot; Apple M4 Max &middot; 3 attributes
 
 | | before | bound | |
 |---|---|---|---|
-| `Counter::add` | ~50 ns | **~1.9 ns** | **~26×** |
+| `Counter::add` | ~50 ns | **~2 ns** | **~25×** |
 | `Histogram::record` | ~60 ns | **~6.6 ns** | **~9×** |
 
 </div>
@@ -182,28 +255,75 @@ class: text-center
 
 # So is it a magic bullet?
 
-<v-click>
+<div v-click="1" class="text-6xl font-bold mt-6">No.</div>
 
-<div class="text-8xl font-bold mt-6">No.</div>
+<div class="mt-10 text-3xl">
+<div v-click="2" class="mb-7">Every attribute value <strong>known upfront</strong></div>
+<div v-click="3">Somewhere handy to <strong>keep the bound instrument</strong></div>
+<div v-click="3" class="text-xl opacity-60 mt-3">A field on the object doing the work.</div>
+</div>
 
-</v-click>
+<div v-click="4" class="mt-7">
+<div class="text-2xl font-bold">Most HTTP request metrics aren’t a natural fit.</div>
+<div class="text-xl opacity-65 mt-2">Route, method, and status vary per request.</div>
+</div>
 
-<div class="mt-12 text-3xl" style="max-width: 40rem; margin-left:auto; margin-right:auto;">
+<!--
+Binding works when the attributes are known ahead of time and the code can keep the handle close to the work. Most HTTP request metrics are not a natural fit: route, method, and status vary per request. Selecting a bound handle by that combination can recreate the lookup. Route templates can be bounded, while raw paths can have high cardinality. The useful exception is code that already holds the right handle. Next, show that with a TCP and UDP router.
+-->
 
-<v-clicks>
+---
 
-<div class="mb-5" style="white-space: nowrap;">every attribute value <strong>known upfront</strong></div>
-<div class="mb-5" style="white-space: nowrap;">somewhere handy to <strong>keep the bound instrument</strong></div>
+# Keep the counter on the router
 
-</v-clicks>
+<div class="grid grid-cols-2 gap-8 mt-7">
+
+<div>
+<div class="text-xl opacity-65 mb-3">Setup: one handle per router</div>
+
+```rust
+let tcp_router = PacketRouter {
+    packets: counter.bind(&[
+        KeyValue::new("protocol", "tcp"),
+    ]),
+};
+
+let udp_router = PacketRouter {
+    packets: counter.bind(&[
+        KeyValue::new("protocol", "udp"),
+    ]),
+};
+```
 
 </div>
 
-<v-click>
+<div v-click="1">
+<div class="text-xl opacity-65 mb-3">Hot path: update the stored handle</div>
 
-<div class="text-2xl opacity-70 mt-8">miss either one &mdash; and it's a no-go</div>
+```rust
+struct PacketRouter {
+    packets: BoundCounter<u64>,
+}
 
-</v-click>
+impl PacketRouter {
+    fn route_packet(&self) {
+        self.packets.add(1);
+    }
+}
+
+tcp_router.route_packet();
+udp_router.route_packet();
+```
+
+</div>
+
+</div>
+
+<div v-click="2" class="text-2xl mt-8 text-center">Each router already has <strong>the right metric point</strong>.</div>
+
+<!--
+At setup, the TCP router binds protocol equals TCP, and the UDP router binds protocol equals UDP. Each stores its own bound counter as a field. Both use the same route_packet method. On the hot path, that method updates its counter field directly. No attributes need to be constructed, and no map needs to be searched for a handle.
+-->
 
 ---
 
@@ -254,7 +374,7 @@ Break it. Tell us.
 
 ---
 layout: center
-class: text-center kcd-brand
+class: text-center summit-brand
 ---
 
 # Key Takeaway
@@ -294,7 +414,7 @@ Flexible by default. Fast when you need it.
 
 ---
 layout: center
-class: text-center kcd-brand
+class: text-center summit-brand
 ---
 
 # Thank you

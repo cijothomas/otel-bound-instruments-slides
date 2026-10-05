@@ -1,7 +1,10 @@
 # OpenTelemetry Metrics Just Got 25× Faster
 
-A 5-minute lightning talk on **bound instruments** in OpenTelemetry.
-KCD SF Bay Area 2026 · Cijo Thomas, Microsoft
+A 10-minute lightning talk on **bound instruments** in OpenTelemetry.
+Observability Summit Europe 2026 · October 5 · Prague
+Cijo Thomas, Microsoft
+
+[Official session](https://events.linuxfoundation.org/observability-summit-europe/program/schedule/?id=1263867) · 12:00–12:10 · South Hall 3 A (Floor 3)
 
 ### ▶ [View the slides](https://cijothomas.github.io/otel-bound-instruments-slides/)
 
@@ -40,7 +43,12 @@ measured on an Apple M4 Max with 3 attributes.
 > `~5 ms` (HTTP request) and `~100 ns` (packet routing) on slide 2 are
 > illustrative orders of magnitude, not measurements.
 
-## Branding
+## Presentation material
 
-KCD SF Bay Area 2026 palette and logos in `style.css` and `public/`.
-The template font is Clarity City Next; this deck substitutes Poppins.
+`slides.md` is the active deck. `slides-with-notes.md` includes presenter notes;
+`SCRIPT.md` has click cues, and `TALK-PLAN.md` has the 10-minute pacing plan.
+
+The current deck adapts the official Observability Summit Europe 2026 PowerPoint
+template: navy backgrounds, original circle artwork and event logos, Arial text,
+and locally bundled JetBrains Mono for code. Original KCD assets remain in the repository as source
+material for the earlier delivery.
